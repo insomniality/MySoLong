@@ -6,7 +6,7 @@
 /*   By: mikarzum <mikarzum@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/11 17:46:22 by mikarzum          #+#    #+#             */
-/*   Updated: 2022/10/18 18:20:37 by mikarzum         ###   ########.fr       */
+/*   Updated: 2022/10/18 22:23:18 by mikarzum         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@ void	*imgC;
 int		a, b;
 int		x, y;
 int		xp, yp;
+char	**matrix;
 
 int	map_size(char *flnm, int flag)
 {
@@ -54,7 +55,7 @@ int	map_size(char *flnm, int flag)
 		return (y);
 }
 
-char	**map_matrix()
+char	**map_matrix() // "\n"-er@ chi dnum matrixi mej
 {
 	char	**mx;
 	int		fd;
@@ -67,22 +68,20 @@ char	**map_matrix()
 		if (ch[0] == '\n' + 0 * (erk++))
 			brdz += 1 + 0 * (erk = 0);
 	close(fd); // arandzin funkcia sarqi sra hamar
-	mx = (char**)malloc(sizeof(char*) * brdz);
+	mx = (char**)malloc(sizeof(char*) * brdz + 1);
+	mx[brdz] = NULL;
 	fd = open("map.ber", O_RDONLY);
-	while (brdz < 1)
-	{
-		mx[brdz - 1] = (char*)malloc(sizeof(char) * erk + 1);
-		mx[brdz-- - 1][erk] = '\0';
-	}
+	while (brdz > 0)
+		mx[brdz-- - 1] = (char*)malloc(sizeof(char) * erk + 1);
 	erk = 0;
-	while (read(fd, &mx[brdz - 1][erk], 1) == 1)
-		if (mx[brdz - 1][erk] == '\n' + 0 * (erk++))
-			brdz += 1 + 0 * (erk = 0);
+	while (read(fd, &mx[brdz][erk], 1) == 1) // MIAT NORM@ 100%-v stugi !!!!!!!!!!!!!
+		if (mx[brdz][erk] == '\n' + 0 * (erk++))
+			brdz += 1 + 0 * ((erk = 0) + (mx[brdz][erk] = '\0'));
 	close(fd);
 	return (mx);
 }
 
-void painter(char *flnm)
+void painterOld(char *flnm)
 {
 	// printf("HELo\n");
 	int	fd;
@@ -127,68 +126,123 @@ void painter(char *flnm)
 	close(fd);
 }
 
-int	cords1(char *flnm, char find)
+int	ft_strlen(char *str)
 {
-	int		i;
-	int		fd;
-	char	ch[1];
+	int	i;
 
 	i = 0;
-	fd = open(flnm, O_RDONLY);
-	while (ch[0] == find)
-	{
-		read(fd, ch, 1) == 1;
+	while (str[i])
 		i++;
-	}
-	close(fd);
 	return (i);
 }
 
-int	cords2(char *flnm, int x, int y)
+int	ft_mtrxlen(char **str)
 {
-	int		i;
-	int		fd;
-	int		xog;
-	char	ch[1];
-	
+	int	i;
 
 	i = 0;
-	fd = open(flnm, O_RDONLY);
-	while (read(fd, ch, 1) == 1 && (x != xog || y > 0)) // y might be +- 1 initially
+	while (str[i])
+		i++;
+	return (i);
+}
+
+void painter(char **m)
+{
+	int	e;
+	int	i;
+	
+	e = ft_strlen(m[0]);
+	i = 0;
+	while (i < ft_mtrxlen(m) * e) // nor strlen sarqi vor while-i mej \0-i tex@ voch mi ban chlini (tipo goyutun@ unenal chunenal@ menak stugi)
 	{
-		if (ch[0] == '\n')
+		if (m[i / e][i % e] != '\0' && m[i / e][i % e] != '0' && m[i / e][i % e] != '1')
 		{
-			y--;
-			x = 0;
-			i++;
-			continue ;
+			if (m[i / e][i % e] != 'C' && m[i / e][i % e] != 'E' && m[i / e][i % e] != 'P')
+			{
+				printf("Error");
+				exit(1);
+			}
 		}
-		x++;
+		// if (m[i / e][i % e] == '\0' && 1 * (i++)) //verjum vor continue chgrem, qanzi x-@ zroyanuma
+		// 	break ;
+		if (m[i / e][i % e] == '0')
+			mlx_put_image_to_window(mlx, wdp, img0, x, y);
+		if (m[i / e][i % e] == '1')
+			mlx_put_image_to_window(mlx, wdp, img1, x, y);
+		else if (m[i / e][i % e] == 'C')
+			mlx_put_image_to_window(mlx, wdp, imgC, x, y);
+		else if (m[i / e][i % e] == 'E')
+			mlx_put_image_to_window(mlx, wdp, imgE, x, y);
+		else if (m[i / e][i % e] == 'P')
+			mlx_put_image_to_window(mlx, wdp, imgP, x, y);
 		i++;
 	}
-	close(fd);
-	return (i);
 }
 
-int map_changer(char **mtrx, int xc, int yc, int key)
+int	cords1(char *flnm, char find, int xoy)
 {
-	//open (write_only)
-	int	xp;
-	int	yp;
-	
-	xp = cords1("map.ber", 'P');
-	yp = cords1("map.ber", 'P');
-	if (key == 123 /*&& x != 0*/) // <
+	int		erk;
+	int		brdz;
+	int		fd;
+	char	ch[1];
+
+	fd = open("map.ber", O_RDONLY) + 0 * ((erk = 0) + (brdz = 1));
+	while (read(fd, &ch[0], 1) == 1)
 	{
-		// x -= a;
-		xp -= EEEEEE;
+		if (ch[0] == find)
+			break ;
+		if (ch[0] == '\n' + 0 * (erk++))
+			brdz += 1 + 0 * (erk = 0);
 	}
-	if (key == 124 && x != 15 * a)  // >
-		x += a;
-	if (key == 125 && y != 7 * b)  // v
-		y += b;
-	if (key == 126 && y != 0)  // ^
-		y -= b;
+	if (read(fd, &ch[0], 1) == 1)
+		printf("There is no Player on the map");
+	close(fd); // arandzin funkcia sarqi sra hamar
+	if (xoy == 0)
+		return (erk);	
+	return (brdz);
+}
+
+// int	cords2(char *flnm, int x, int y)
+// {
+// 	int		i;
+// 	int		fd;
+// 	int		xog;
+// 	char	ch[1];
+//
+// 	i = 0;
+// 	fd = open(flnm, O_RDONLY);
+// 	while (read(fd, ch, 1) == 1 && (x != xog || y > 0)) // y might be +- 1 initially
+// 	{
+// 		if (ch[0] == '\n')
+// 		{
+// 			y--;
+// 			x = 0;
+// 			i++;
+// 			continue ;
+// 		}
+// 		x++;
+// 		i++;
+// 	}
+// 	close(fd);
+// 	return (i);
+// }
+
+char **map_changer(char **mtrx, int xp, int yp, int key)
+{
+	if (key == 123 && xp != 0 && mtrx[yp][xp - 1] != '1') // <
+		if (mtrx[yp][xp - 1] == 'E' + 0 * (mtrx[yp][xp - 1] = 'P'))
+			exit(1);
+	if (key == 124 && xp != (ft_strlen(mtrx[yp]) - 1) && mtrx[yp][xp + 1] != '1')  // > //MIHAT \n-i moment@ ushadir exi
+		if (mtrx[yp][xp + 1] == 'E' + 0 * (mtrx[yp][xp + 1] = 'P'))
+			exit(1);
+	if (key == 125 && yp != (ft_strlen((char*)mtrx) - 1) && mtrx[yp + 1][xp] != '1')  // v
+		if (mtrx[yp + 1][xp] == 'E' + 0 * (mtrx[yp + 1][xp] = 'P'))
+			exit(1);
+	if (key == 126 && yp != 0 && mtrx[yp - 1][xp] != '1')  // ^
+		if (mtrx[yp - 1][xp] == 'E' + 0 * (mtrx[yp - 1][xp] = 'P'))
+			exit(1);
+	mtrx[yp][xp] = '0';
+	return (mtrx);
 }
 
 int key_hook(int key, void *param)
@@ -197,16 +251,15 @@ int key_hook(int key, void *param)
 		exit (1);
 	if (key >= 123 && key <= 126)
 	{
-		if (key == 123 && x != 0) // <
-			x -= a;
-		if (key == 124 && x != 15 * a)  // >
-			x += a;
-		if (key == 125 && y != 7 * b)  // v
-			y += b;
-		if (key == 126 && y != 0)  // ^
-			y -= b;
-		
-		esi vor lini logikan map_changer();
+		// if (key == 123 && x != 0) // <
+		// 	x -= a;
+		// if (key == 124 && x != 15 * a)  // >
+		// 	x += a;
+		// if (key == 125 && y != 7 * b)  // v
+		// 	y += b;
+		// if (key == 126 && y != 0)  // ^
+		// 	y -= b;
+		matrix = map_changer(matrix, cords1("map.ber", 'P', 0), cords1("map.ber", 'P', 1), key);
 		mlx_clear_window(mlx, wdp);
 		painter("map.ber");
 		// mlx_put_image_to_window(mlx, wdp, imgE, x, y);
@@ -240,11 +293,10 @@ int	main(int argc, char **argv)
 	//int		fd;
 	int		i;
 	int		ecord;
-	char	**mtrx;
 	// int		qbsz = 270;
 	//char	ch[1];
 	
-	mtrx = map_matrix();
+	matrix = map_matrix();
 	mlx = mlx_init();
 	imgP = mlx_xpm_file_to_image(mlx, "player.xpm", &a, &b);
 	wdp = mlx_new_window(mlx, map_size(argv[1], 0) * a, map_size(argv[1], 1) * b, "Ma Game");
