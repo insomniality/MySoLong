@@ -6,13 +6,16 @@
 /*   By: mikarzum <mikarzum@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/10/11 17:46:22 by mikarzum          #+#    #+#             */
-/*   Updated: 2022/10/18 22:23:18 by mikarzum         ###   ########.fr       */
+/*   Updated: 2022/11/01 00:45:27 by mikarzum         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <mlx.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h> 
+
 
 //ete E (and ig similiar things) chka to error ta
 
@@ -27,60 +30,80 @@ int		a, b;
 int		x, y;
 int		xp, yp;
 char	**matrix;
+char	**argvv;
 
 int	map_size(char *flnm, int flag)
 {
-	int		x;
-	int		y;
+	int		xd;
+	int		yd;
 	int		fd;
 	char	ch[1];
 	
 	fd = open(flnm, O_RDONLY);
-	x = 0;
-	y = 1;
+	xd = 0;
+	yd = 1;
 	while (read(fd, ch, 1) == 1)
 	{
 		if (ch[0] == '\n')
 		{
-			y++;
-			x = 0;
+			yd++;
+			xd = 0;
 			continue ;
 		}
-		x++;
+		xd++;
 	}
 	close(fd);
 	if (flag == 0)
-		return (x);
+		return (xd);
 	else if (flag == 1)
-		return (y);
+		return (yd);
+	return (-1);
 }
 
 char	**map_matrix() // "\n"-er@ chi dnum matrixi mej
 {
 	char	**mx;
 	int		fd;
-	int		ch[1];
+	char	ch[1];
 	int		erk;
 	int		brdz;
 	
 	fd = open("map.ber", O_RDONLY) + 0 * ((erk = 0) + (brdz = 1));
 	while (read(fd, &ch[0], 1) == 1)
-		if (ch[0] == '\n' + 0 * (erk++))
-			brdz += 1 + 0 * (erk = 0);
+	{
+		if (ch[0] == '\n')
+		{
+			brdz += 1;
+			erk = 0;
+		}
+		erk++;
+	}
 	close(fd); // arandzin funkcia sarqi sra hamar
+	erk--;
 	mx = (char**)malloc(sizeof(char*) * brdz + 1);
 	mx[brdz] = NULL;
 	fd = open("map.ber", O_RDONLY);
 	while (brdz > 0)
-		mx[brdz-- - 1] = (char*)malloc(sizeof(char) * erk + 1);
+	{
+		mx[brdz - 1] = (char*)malloc(sizeof(char) * erk + 1);
+		brdz--;
+	}
 	erk = 0;
 	while (read(fd, &mx[brdz][erk], 1) == 1) // MIAT NORM@ 100%-v stugi !!!!!!!!!!!!!
-		if (mx[brdz][erk] == '\n' + 0 * (erk++))
-			brdz += 1 + 0 * ((erk = 0) + (mx[brdz][erk] = '\0'));
+	{
+		if (mx[brdz][erk] == '\n' /*+ 0 * (erk++)*/)
+		{
+			brdz += 1 /* + 0 * ((erk = 0) + (mx[brdz][erk] = '\0'))*/;
+			mx[brdz][erk] = '\0';
+			erk = 0;
+			continue ;
+		}
+		erk++;
+	}
 	close(fd);
 	return (mx);
 }
-
+/*
 void painterOld(char *flnm)
 {
 	// printf("HELo\n");
@@ -126,6 +149,7 @@ void painterOld(char *flnm)
 	close(fd);
 }
 
+*/
 int	ft_strlen(char *str)
 {
 	int	i;
@@ -149,57 +173,66 @@ int	ft_mtrxlen(char **str)
 void painter(char **m)
 {
 	int	e;
+	int	b;
 	int	i;
+	int j;
 	
-	e = ft_strlen(m[0]);
+	j = 0;
+	e = ft_strlen(m[0]) - 1;
+	b = ft_mtrxlen(m);
+	printf("Hallo ==> %i\n", b);
 	i = 0;
-	while (i < ft_mtrxlen(m) * e) // nor strlen sarqi vor while-i mej \0-i tex@ voch mi ban chlini (tipo goyutun@ unenal chunenal@ menak stugi)
+	while (i < b * e) // nor strlen sarqi vor while-i mej \0-i tex@ voch mi ban chlini (tipo goyutun@ unenal chunenal@ menak stugi)
 	{
 		if (m[i / e][i % e] != '\0' && m[i / e][i % e] != '0' && m[i / e][i % e] != '1')
 		{
 			if (m[i / e][i % e] != 'C' && m[i / e][i % e] != 'E' && m[i / e][i % e] != 'P')
 			{
-				printf("Error");
+				// printf("ErrorPainter --> I == %i; II == %i", i / e, i % e);
 				exit(1);
 			}
 		}
+		// printf("x => %i; y => %i; ch => %c\n", i / e, i % e, m[i / e][i % e]);
+		// printf("Byeee %i\n", j++);
 		// if (m[i / e][i % e] == '\0' && 1 * (i++)) //verjum vor continue chgrem, qanzi x-@ zroyanuma
 		// 	break ;
 		if (m[i / e][i % e] == '0')
-			mlx_put_image_to_window(mlx, wdp, img0, x, y);
-		if (m[i / e][i % e] == '1')
-			mlx_put_image_to_window(mlx, wdp, img1, x, y);
+			mlx_put_image_to_window(mlx, wdp, img0, i % e * 32, i / e  * 32);
+		else if (m[i / e][i % e] == '1') // if er araj esli chto
+			mlx_put_image_to_window(mlx, wdp, img1, i % e * 32, i / e  * 32);
 		else if (m[i / e][i % e] == 'C')
-			mlx_put_image_to_window(mlx, wdp, imgC, x, y);
+			mlx_put_image_to_window(mlx, wdp, imgC, i % e * 32, i / e  * 32);
 		else if (m[i / e][i % e] == 'E')
-			mlx_put_image_to_window(mlx, wdp, imgE, x, y);
+			mlx_put_image_to_window(mlx, wdp, imgE, i % e * 32, i / e  * 32);
 		else if (m[i / e][i % e] == 'P')
-			mlx_put_image_to_window(mlx, wdp, imgP, x, y);
+			mlx_put_image_to_window(mlx, wdp, imgP, i % e * 32, i / e  * 32);
 		i++;
 	}
 }
 
-int	cords1(char *flnm, char find, int xoy)
+int	cords1(char **mtrx, char find, int xoy) // starting point is (0,0)
 {
 	int		erk;
 	int		brdz;
-	int		fd;
-	char	ch[1];
+	int		i;
 
-	fd = open("map.ber", O_RDONLY) + 0 * ((erk = 0) + (brdz = 1));
-	while (read(fd, &ch[0], 1) == 1)
+	erk = ft_strlen(mtrx[0]) - 1;
+	brdz = ft_mtrxlen(mtrx);
+	printf("BB => %i;EE => %i\n", brdz, erk);
+	i = 0;
+	while (i < erk * brdz)
 	{
-		if (ch[0] == find)
+		if (mtrx[i / erk][i % erk] == find)
 			break ;
-		if (ch[0] == '\n' + 0 * (erk++))
+		if (mtrx[i / erk][i % erk] == '\n')
 			brdz += 1 + 0 * (erk = 0);
+		i++;
 	}
-	if (read(fd, &ch[0], 1) == 1)
-		printf("There is no Player on the map");
-	close(fd); // arandzin funkcia sarqi sra hamar
+	if (i == erk * brdz) // +- 1 ig; idk stugi
+		printf("There is no Player on the map\n");
 	if (xoy == 0)
-		return (erk);	
-	return (brdz);
+		return (i % erk);	
+	return (i / erk);
 }
 
 // int	cords2(char *flnm, int x, int y)
@@ -230,18 +263,33 @@ int	cords1(char *flnm, char find, int xoy)
 char **map_changer(char **mtrx, int xp, int yp, int key)
 {
 	if (key == 123 && xp != 0 && mtrx[yp][xp - 1] != '1') // <
-		if (mtrx[yp][xp - 1] == 'E' + 0 * (mtrx[yp][xp - 1] = 'P'))
+	{
+		if (mtrx[yp][xp - 1] == 'E')
 			exit(1);
-	if (key == 124 && xp != (ft_strlen(mtrx[yp]) - 1) && mtrx[yp][xp + 1] != '1')  // > //MIHAT \n-i moment@ ushadir exi
-		if (mtrx[yp][xp + 1] == 'E' + 0 * (mtrx[yp][xp + 1] = 'P'))
+		mtrx[yp][xp - 1] = 'P';
+		mtrx[yp][xp] = '0';
+	}
+	else if (key == 124 && xp != (ft_strlen(mtrx[yp]) - 1) && mtrx[yp][xp + 1] != '1')  // > //MIHAT \n-i moment@ ushadir exi
+	{
+		if (mtrx[yp][xp + 1] == 'E')
 			exit(1);
-	if (key == 125 && yp != (ft_strlen((char*)mtrx) - 1) && mtrx[yp + 1][xp] != '1')  // v
-		if (mtrx[yp + 1][xp] == 'E' + 0 * (mtrx[yp + 1][xp] = 'P'))
+		mtrx[yp][xp + 1] = 'P';
+		mtrx[yp][xp] = '0';
+	}
+	else if (key == 125 && yp != (ft_strlen((char*)mtrx) - 1) && mtrx[yp + 1][xp] != '1')  // v
+	{
+		if (mtrx[yp + 1][xp] == 'E')
 			exit(1);
-	if (key == 126 && yp != 0 && mtrx[yp - 1][xp] != '1')  // ^
-		if (mtrx[yp - 1][xp] == 'E' + 0 * (mtrx[yp - 1][xp] = 'P'))
+		mtrx[yp + 1][xp] = 'P';
+		mtrx[yp][xp] = '0';
+	}
+	else if (key == 126 && yp != 0 && mtrx[yp - 1][xp] != '1')  // ^
+	{
+		if (mtrx[yp - 1][xp] == 'E')
 			exit(1);
-	mtrx[yp][xp] = '0';
+		mtrx[yp - 1][xp] = 'P';
+		mtrx[yp][xp] = '0';
+	}
 	return (mtrx);
 }
 
@@ -258,19 +306,24 @@ int key_hook(int key, void *param)
 		// if (key == 125 && y != 7 * b)  // v
 		// 	y += b;
 		// if (key == 126 && y != 0)  // ^
-		// 	y -= b;
-		matrix = map_changer(matrix, cords1("map.ber", 'P', 0), cords1("map.ber", 'P', 1), key);
+		// 	y -= b;		
+		matrix = map_changer(matrix, cords1(matrix, 'P', 0), cords1(matrix, 'P', 1), key);
 		mlx_clear_window(mlx, wdp);
-		painter("map.ber");
+		painter(matrix);
+		printf("X,Y -> %i,%i \n", cords1(matrix, 'P', 0), cords1(matrix, 'P', 1));
 		// mlx_put_image_to_window(mlx, wdp, imgE, x, y);
 		// mlx_put_image_to_window(mlx, wdp, imgP, x, y);
 	}
 	printf("%d\n", key);
+	param += 0;
+	return (0);
 }
 
 int m(int key, int xX, int yY, void *param)
 {
 	printf("%d %d %d\n", key, xX, yY);
+	param += 0;
+	return (0);
 }
 
 int z(void *param)
@@ -281,6 +334,8 @@ int z(void *param)
 	if(i == 1)
 		exit(1);
 	i++;
+	param += 0;
+	return (0);
 }
 
 int	main(int argc, char **argv)
@@ -291,12 +346,13 @@ int	main(int argc, char **argv)
 	// void	*img;
 	// int		a, b;
 	//int		fd;
-	int		i;
-	int		ecord;
+	// int						i;
+	// int						ecord;
+	argvv = argv;
 	// int		qbsz = 270;
 	//char	ch[1];
-	
 	matrix = map_matrix();
+	printf("Hay\n");
 	mlx = mlx_init();
 	imgP = mlx_xpm_file_to_image(mlx, "player.xpm", &a, &b);
 	wdp = mlx_new_window(mlx, map_size(argv[1], 0) * a, map_size(argv[1], 1) * b, "Ma Game");
@@ -317,11 +373,17 @@ int	main(int argc, char **argv)
 ///////////
 	if (argc != 2)
 	{
-		printf("Error");
+		printf("ErRor");
 		return (0);
 	}
+	printf("Hay\n");
 	
-	painter(argv[1]);
+	painter(matrix);
+
+	printf("X,Y -> %i,%i \n", cords1(matrix, 'P', 0), cords1(matrix, 'P', 1));
+	
+	printf("Hay2\n");
+
 ///////////////
 	/**/
 	// if (!img)
